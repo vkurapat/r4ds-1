@@ -1,5 +1,155 @@
 ---
 title: "Analyzing the Billboard 100"
 author: "Var Kurapati"
+execute: 
+  echo: false
 ---
+
+```{r}
+#| message: false
+library(tidyverse)
+```
+
+```{r}
+ggplot(data = billboard, mapping = aes(x = wk1, y = wk2)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Billboard Top 100 Analysis",
+    subtitle = "Comparing Week 1 Rankings to Week 2 Rankings",
+    x = "Week 1 Rank",
+    y = "Week 2 Rank",
+    caption = "Data Source: tidyr package"
+  )
+```
+
+```{r}
+line_graph <- billboard |> 
+  filter(track %in% c("Kryptonite", "Loser", "Baby Don't Cry")) |> 
+  pivot_longer(
+    cols = wk1:wk5, 
+    names_to = "week", 
+    values_to = "rank"
+  ) |> 
+  ggplot(mapping = aes(x = week, y = rank, group = track, color = track)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ track)
+
+ggsave("line_graph.png", plot = line_graph)
+```
+
+```{r}
+billboard |> 
+  filter(track %in% c("Kryptonite", "Loser", "Baby Don't Cry")) |> 
+  pivot_longer(
+    cols = starts_with("wk"), 
+    names_to = "week", 
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |> 
+  ggplot(mapping = aes(x = track, y = rank, fill = track)) +
+  geom_boxplot()
+```
+
+```{r}
+billboard |> 
+  filter(track %in% c("Kryptonite", "Loser", "Baby Don't Cry")) |> 
+  pivot_longer(
+    cols = starts_with("wk"), 
+    names_to = "week", 
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |> 
+  ggplot(mapping = aes(x = track, fill = track)) +
+  geom_bar()
+```
+
+```{r}
+#| cache: true
+
+billboard_clean <- billboard |>
+  filter(wk1 < 101) |>
+  arrange(wk1) |>
+  mutate(improvement = wk1 - wk2, .after = wk2) |>
+  select(artist:improvement) |>
+  rename(week1 = wk1, week2 = wk2)
+```
+
+```{r}
+ggplot(data = billboard_clean, mapping = aes(x = improvement)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") + 
+  labs(
+    title = "Distribution of Billboard Top 100 Song Ranking Improvements From Week 1 to Week 2",
+    subtitle = "Most songs either had no improvement or improved their ranking by up to 20 places",
+    x = "Song Rank Improvement",
+    y = "Count",
+    caption = "Source: Song rankings for Billboard top 100 in the year 2000"
+  ) +
+  theme(
+    plot.title = element_text(size = 9, face = "bold"),
+    plot.subtitle = element_text(size = 8)
+  )
+```
+
+```{r}
+music_1 <- read_csv(
+  "data/music.csv",
+  col_types = cols_only(
+    artist.familiarity = col_character(),
+    artist.hotttnesss = col_character(),
+    artist.id = col_character()
+  )
+)
+
+tibble(
+  artist.familiarity = c("0.581793766", "0.630630038", "0.487356791"),
+  artist.hotttnesss = c("0.401997543", "0.417499645", "0.343428378"),
+  artist.id = c("ARD7TVE1187B99BFB1", "ARMJAGH1187FB546F3", "ARKRRTF1187B9984DA")
+) |> 
+  write_csv("data/music_fake.csv")
+
+music_1 |> 
+  write_csv("data/music_1.csv")
+```
+
+
+```{r}
+#| cache: true
+
+billboard_longer <- billboard |>
+  pivot_longer(
+    cols = starts_with("wk"),
+    names_to = "week",
+    values_to = "rank",
+    values_drop_na = TRUE
+  ) |>
+  mutate(week = parse_number(week))
+```
+
+```{r}
+ggplot(data = billboard_longer, aes(x = week, y = rank, group = track)) +
+  geom_line(alpha = 0.25, color = "midnightblue") +
+  scale_y_reverse() +
+  labs(
+    title = "Billboard 100 Rank Over Time",
+    subtitle = "Tracking song progression across weeks post-release",
+    x = "Week",
+    y = "Rank",
+    caption = "Source: Million Song Dataset"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
